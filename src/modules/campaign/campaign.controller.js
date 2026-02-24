@@ -39,6 +39,7 @@ export const createCampaign = async (req, res) => {
     }
 
     const campaign = await prisma.$transaction(async (tx) => {
+      // Deduct credits
       await tx.user.update({
         where: { id: req.user.id },
         data: {
@@ -48,13 +49,17 @@ export const createCampaign = async (req, res) => {
         }
       });
 
+      // Create campaign
       return await tx.campaign.create({
         data: {
           title,
           message,
           totalRecipients,
           userId: req.user.id,
-          status: "PENDING"
+          status: "PENDING",
+          sent: 0,
+          delivered: 0,
+          failed: 0
         }
       });
     });
@@ -105,7 +110,7 @@ export const getAllCampaigns = async (req, res) => {
 
 /* ===================================================
    Simulate Campaign Sending
-   (For Demo / Analytics Purpose)
+   (Analytics Only — No Credit Deduction)
 =================================================== */
 export const simulateCampaignSend = async (req, res) => {
   try {
